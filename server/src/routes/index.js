@@ -15,5 +15,8 @@ router.use("/promote", promoteRoutes);
 router.use("/attendance", attendanceRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/report", reportRoutes);
+router.get("/", (req, res) => {
+  res.send("Welcome to the Sales Promoter API");
+});
 
 export default router;

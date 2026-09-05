@@ -181,10 +181,6 @@ export const addPromote = async (req, res) => {
       entries,
     } = req.body;
 
-    // ==========================================
-    // BASIC VALIDATION
-    // ==========================================
-
     if (!promote_date || !shop_id || !cust_mob) {
       return res.status(400).json({
         success: false,
@@ -208,29 +204,10 @@ export const addPromote = async (req, res) => {
       }
     }
 
-    // ==========================================
-    // START TRANSACTION
-    // ==========================================
-
     await connection.beginTransaction();
 
-    // ==========================================
-    // CREATED BY
-    // c_by distinguishes user-wise entries (user_id column is legacy
-    // and only populated to satisfy the NOT NULL constraint)
-    // ==========================================
-
     const createdBy = req.user.user_id;
-
-    // ==========================================
-    // DEFAULT VALUES
-    // ==========================================
-
     const promoteStatus = status || "A";
-
-    // ==========================================
-    // GET NEXT PROMOTE ID
-    // ==========================================
 
     const [maxHdRows] = await connection.query(
       `SELECT COALESCE(MAX(promote_id), 0) + 1 AS next_promote_id
@@ -239,10 +216,6 @@ export const addPromote = async (req, res) => {
     );
 
     const promote_id = maxHdRows[0].next_promote_id;
-
-    // ==========================================
-    // INSERT HEADER
-    // ==========================================
 
     await connection.query(
       `INSERT INTO promotion_hd (
@@ -265,10 +238,6 @@ export const addPromote = async (req, res) => {
       ],
     );
 
-    // ==========================================
-    // GET NEXT PROMOTE DETAIL ID
-    // ==========================================
-
     const [maxDtRows] = await connection.query(
       `SELECT COALESCE(MAX(promote_dt_id), 0) AS max_promote_dt_id
        FROM promotion_dt
@@ -276,10 +245,6 @@ export const addPromote = async (req, res) => {
     );
 
     let nextDtId = maxDtRows[0].max_promote_dt_id + 1;
-
-    // ==========================================
-    // INSERT DETAILS
-    // ==========================================
 
     const detailValues = entries.map((entry) => [
       nextDtId++,
@@ -305,15 +270,7 @@ export const addPromote = async (req, res) => {
       [detailValues],
     );
 
-    // ==========================================
-    // COMMIT
-    // ==========================================
-
     await connection.commit();
-
-    // ==========================================
-    // RESPONSE
-    // ==========================================
 
     return res.status(201).json({
       success: true,
@@ -327,9 +284,6 @@ export const addPromote = async (req, res) => {
       },
     });
   } catch (error) {
-    // ==========================================
-    // ROLLBACK
-    // ==========================================
 
     await connection.rollback();
 
@@ -358,10 +312,6 @@ export const updatePromote = async (req, res) => {
       entries,
     } = req.body;
 
-    // ==========================================
-    // BASIC VALIDATION
-    // ==========================================
-
     if (!promote_date || !shop_id || !cust_mob) {
       return res.status(400).json({
         success: false,
@@ -385,17 +335,7 @@ export const updatePromote = async (req, res) => {
       }
     }
 
-    // ==========================================
-    // START TRANSACTION
-    // ==========================================
-
     await connection.beginTransaction();
-
-    // ==========================================
-    // CHECK PROMOTION EXISTS & BELONGS TO USER
-    // c_by distinguishes user-wise entries
-    // ==========================================
-
     const createdBy = req.user.user_id;
 
     const [existingRows] = await connection.query(
@@ -416,19 +356,7 @@ export const updatePromote = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // STATUS
-    // Keep old value if not provided
-    // ==========================================
-
-    const promoteStatus =
-      status !== undefined && status !== null && status !== ""
-        ? status
-        : existingRows[0].status;
-
-    // ==========================================
-    // UPDATE HEADER
-    // ==========================================
+    const promoteStatus =status !== undefined && status !== null && status !== ""? status: existingRows[0].status;
 
     await connection.query(
       `UPDATE promotion_hd
@@ -450,18 +378,10 @@ export const updatePromote = async (req, res) => {
       ],
     );
 
-    // ==========================================
-    // REPLACE DETAILS
-    // ==========================================
-
     await connection.query(
       `DELETE FROM promotion_dt WHERE promote_id = ?`,
       [id],
     );
-
-    // ==========================================
-    // GET NEXT PROMOTE DETAIL ID
-    // ==========================================
 
     const [maxDtRows] = await connection.query(
       `SELECT COALESCE(MAX(promote_dt_id), 0) AS max_promote_dt_id
@@ -495,27 +415,15 @@ export const updatePromote = async (req, res) => {
       [detailValues],
     );
 
-    // ==========================================
-    // COMMIT TRANSACTION
-    // ==========================================
-
     await connection.commit();
-
-    // ==========================================
-    // RESPONSE
-    // ==========================================
 
     return res.status(200).json({
       success: true,
       message: "Promotion updated successfully.",
     });
   } catch (error) {
-    // ==========================================
-    // ROLLBACK
-    // ==========================================
 
     await connection.rollback();
-
     console.error("Update Promote Error:", error);
 
     return res.status(500).json({
@@ -536,11 +444,6 @@ export const togglePromoteStatus = async (req, res) => {
 
     await connection.beginTransaction();
 
-    // ==========================================
-    // CHECK PROMOTION EXISTS & BELONGS TO USER
-    // c_by distinguishes user-wise entries
-    // ==========================================
-
     const [existingRows] = await connection.query(
       `SELECT promote_id, status
        FROM promotion_hd
@@ -559,10 +462,6 @@ export const togglePromoteStatus = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // FLIP STATUS
-    // ==========================================
-
     const newStatus = existingRows[0].status === "A" ? "I" : "A";
 
     await connection.query(
@@ -571,26 +470,13 @@ export const togglePromoteStatus = async (req, res) => {
        WHERE promote_id = ?`,
       [newStatus, createdBy, id],
     );
-
-    // ==========================================
-    // COMMIT TRANSACTION
-    // ==========================================
-
     await connection.commit();
-
-    // ==========================================
-    // RESPONSE
-    // ==========================================
-
     return res.status(200).json({
       success: true,
       message: `Promotion ${newStatus === "A" ? "activated" : "deactivated"} successfully.`,
       status: newStatus,
     });
   } catch (error) {
-    // ==========================================
-    // ROLLBACK
-    // ==========================================
 
     await connection.rollback();
 

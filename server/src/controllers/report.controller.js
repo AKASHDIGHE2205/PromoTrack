@@ -26,9 +26,6 @@ export const getMonthlySalesReport = async (req, res) => {
       .map((id) => parseInt(id))
       .filter((id) => !Number.isNaN(id));
 
-    // ----------------------------------
-    // Filters
-    // ----------------------------------
     const conditions = ["h.promote_date BETWEEN ? AND ?"];
     const params = [fromDate, toDate];
 
@@ -49,9 +46,6 @@ export const getMonthlySalesReport = async (req, res) => {
 
     const whereClause = conditions.join(" AND ");
 
-    // ----------------------------------
-    // Sales grouped by month + brand type
-    // ----------------------------------
     const [rows] = await pool.query(
       `SELECT
         DATE_FORMAT(h.promote_date, '%Y-%m') AS month_key,
@@ -70,9 +64,6 @@ export const getMonthlySalesReport = async (req, res) => {
       params,
     );
 
-    // ----------------------------------
-    // Pivot into one row per month
-    // ----------------------------------
     const monthMap = new Map();
 
     for (const row of rows) {

@@ -25,7 +25,7 @@ async function authenticate(req, res, next) {
     const user = rows[0];
 
     if (!user || user.status !== "A") {
-      throw ApiError.unauthorized("Account not found or inactive");
+      throw ApiError.unauthorized("User not found or inactive");
     }
 
     req.user = user;

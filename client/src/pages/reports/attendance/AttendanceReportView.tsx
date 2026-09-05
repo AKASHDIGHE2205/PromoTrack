@@ -166,6 +166,7 @@ const AttendanceReportView = () => {
               <select
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
+                disabled={showData}
                 className="w-full sm:w-56 pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all bg-white"
               >
                 <option value="">All Users</option>
@@ -182,6 +183,7 @@ const AttendanceReportView = () => {
                 value={fromDate}
                 max={toDate}
                 onChange={(e) => setFromDate(e.target.value)}
+                disabled={showData}
                 className="w-full sm:w-auto min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
               />
               <span className="text-sm text-gray-400 text-center sm:text-left">to</span>
@@ -190,13 +192,14 @@ const AttendanceReportView = () => {
                 value={toDate}
                 min={fromDate}
                 onChange={(e) => setToDate(e.target.value)}
+                disabled={showData}
                 className="w-full sm:w-auto min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
               />
             </div>
             <button
               type="button"
               onClick={handleGenerate}
-              disabled={loading}
+              disabled={loading || showData}
               className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-sm shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Search className="w-4 h-4" />

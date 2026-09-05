@@ -2,19 +2,19 @@ import { Briefcase, CalendarClock, Info, Mail, MapPinned, Phone, Upload } from "
 import { useCallback, useEffect, useState } from "react";
 import AddUser from "./AddUsers";
 import UpdateUser from "./updateUsers";
+import BulkUploadUsers from "./BulkUploadUsers";
 import { Pagination } from "../../../components/Pagination";
 import { getUsers, toggleUserStatus } from "../../../services/global/userServices";
 import type { User } from "./types";
 import moment from "moment";
 import toast from "react-hot-toast";
 
-
 const UserView = () => {
   const [showAdd, setShowAdd] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
   const [showView, setShowView] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -22,7 +22,7 @@ const UserView = () => {
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -68,9 +68,7 @@ const UserView = () => {
 
   const handleToggle = async (user: User) => {
     const activating = user.status !== "A";
-    const confirmed = window.confirm(
-      `Are you sure you want to ${activating ? "activate" : "deactivate"} ${user.f_name} ${user.l_name}?`
-    );
+    const confirmed = window.confirm(`Are you sure you want to ${activating ? "activate" : "deactivate"} ${user.f_name} ${user.l_name}?`);
     if (!confirmed) return;
 
     try {
@@ -140,7 +138,7 @@ const UserView = () => {
         <div>
           <span className="text-xs text-gray-600 font-medium flex justify-start items-center gap-1"><Briefcase size={12} />Role</span>
           <span className="text-gray-600 text-sm ml-4">
-            {user.role}
+            {user.role === "SP" ? "Sales Promoter" : user.role}
           </span>
         </div>
         <div>
@@ -189,6 +187,8 @@ const UserView = () => {
             </select>
           </div>
           <button
+            type="button"
+            onClick={() => setShowBulk(true)}
             className="items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm shrink-0 hidden sm:block"
           >
             <div className="flex justify-center items-center">
@@ -289,7 +289,7 @@ const UserView = () => {
                       </a>
                     </td>
                     <td className="px-5 py-4 text-sm">{user.town || "-"}</td>
-                    <td className="px-5 py-4 text-sm">{user.role}</td>
+                    <td className="px-5 py-4 text-sm">{user.role === "SP" ? "Sales Promoter" : user.role}</td>
                     <td className="px-5 py-4">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.status === "A" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-600"}`}>
                         {user.status === "A" ? "Active" : "Inactive"}
@@ -357,6 +357,9 @@ const UserView = () => {
 
       {showAdd && (
         <AddUser show={showAdd} setShow={setShowAdd} onSuccess={fetchUsers} />
+      )}
+      {showBulk && (
+        <BulkUploadUsers show={showBulk} setShow={setShowBulk} onSuccess={fetchUsers} />
       )}
       {showUpdate && (
         <UpdateUser

@@ -64,3 +64,30 @@ export const toggleUserStatus = async (id: number) => {
     throw error.response?.data?.message ?? error.message;
   }
 };
+
+export interface BulkUploadUserResult {
+  row: number;
+  success: boolean;
+  message: string;
+  name?: string;
+  email?: string;
+}
+
+export interface BulkUploadUsersResponse {
+  success: boolean;
+  message: string;
+  total: number;
+  successCount: number;
+  errorCount: number;
+  results: BulkUploadUserResult[];
+}
+
+export const bulkAddUsers = async (data: { users: any[] }) => {
+  try {
+    const response = await api.post<BulkUploadUsersResponse>("/auth/bulk-add-users", data);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error bulk adding users:", error);
+    throw error.response?.data?.message ?? error.message;
+  }
+};

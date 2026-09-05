@@ -25,10 +25,8 @@ const fmt = (n: number) => (Number(n) || 0).toFixed(2);
 const MonthlySalesReportView = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Item[]>([]);
-
   const [months, setMonths] = useState<MonthlySalesRow[]>([]);
   const [grandTotal, setGrandTotal] = useState<MonthlySalesTotal>({ premium_kg: 0, other_kg: 0, total_kg: 0 });
-
   const [userId, setUserId] = useState("");
   const [brandType, setBrandType] = useState("");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
@@ -235,6 +233,7 @@ const MonthlySalesReportView = () => {
                 value={fromDate}
                 max={toDate}
                 onChange={(e) => setFromDate(e.target.value)}
+                disabled={showData}
                 className="w-full min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
               />
               <span className="text-sm text-gray-400 text-center sm:text-left">to</span>
@@ -243,6 +242,7 @@ const MonthlySalesReportView = () => {
                 value={toDate}
                 min={fromDate}
                 onChange={(e) => setToDate(e.target.value)}
+                disabled={showData}
                 className="w-full min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
               />
             </div>
@@ -252,6 +252,7 @@ const MonthlySalesReportView = () => {
               <select
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
+                disabled={showData}
                 className="w-[70%] pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all bg-white"
               >
                 <option value="">All Users</option>
@@ -262,13 +263,13 @@ const MonthlySalesReportView = () => {
                 ))}
               </select>
             </div>
-
             <div className="relative">
               <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <select
                 value={brandType}
                 onChange={(e) => setBrandType(e.target.value)}
-                className="w-[70%] pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all bg-white"
+                disabled={showData}
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all bg-white"
               >
                 {brandTypeOptions.map((b) => (
                   <option key={b.value} value={b.value}>{b.label}</option>
@@ -280,6 +281,7 @@ const MonthlySalesReportView = () => {
               <button
                 type="button"
                 onClick={() => setProductsOpen((o) => !o)}
+                disabled={showData}
                 className="w-full sm:w-[70%] flex items-center justify-between gap-2 pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all bg-white relative"
               >
                 <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -288,7 +290,7 @@ const MonthlySalesReportView = () => {
               </button>
 
               {productsOpen && (
-                <div className="absolute z-20 mt-1 w-full sm:w-[70%] max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+                <div className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1">
                   <button
                     type="button"
                     onClick={() => setSelectedItemIds([])}
@@ -320,7 +322,7 @@ const MonthlySalesReportView = () => {
               <button
                 type="button"
                 onClick={handleGenerate}
-                disabled={loading}
+                disabled={loading || showData}
                 className="flex-1 md:flex-initial flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Search className="w-4 h-4" />

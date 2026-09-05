@@ -24,10 +24,6 @@ export const getDashboardSummary = async (req, res) => {
     const historyFrom = toDateStr(addDays(now, -34));
     const trendFrom = toDateStr(addDays(now, -6));
 
-    // ==========================================
-    // ATTENDANCE HISTORY (last 35 days)
-    // ==========================================
-
     const [attendanceRows] = await pool.query(
       `SELECT attendance_date, check_in
        FROM sp_attendance
@@ -72,10 +68,6 @@ export const getDashboardSummary = async (req, res) => {
         present: presentDates.has(dateStr),
       });
     }
-
-    // ==========================================
-    // PROMOTIONS (scoped to logged-in promoter)
-    // ==========================================
 
     const [dailyRows] = await pool.query(
       `SELECT
@@ -150,10 +142,6 @@ export const getDashboardSummary = async (req, res) => {
        LIMIT 5`,
       [userId],
     );
-
-    // ==========================================
-    // SALES PRODUCTS (top products promoted this month)
-    // ==========================================
 
     const [topProductRows] = await pool.query(
       `SELECT

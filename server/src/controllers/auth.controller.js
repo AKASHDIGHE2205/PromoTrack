@@ -70,6 +70,7 @@ export const login = async (req, res) => {
         expiresIn: "1d",
       },
     );
+
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -297,9 +298,6 @@ export const getUsers = async (req, res) => {
         u.status,
         u.c_at,
 
-        -- ==============================
-        -- BANK DETAILS
-        -- ==============================
         b.bank_id,
         b.account_no,
         b.bank_name,
@@ -307,9 +305,6 @@ export const getUsers = async (req, res) => {
         b.ifsc_code,
         b.status AS bank_status,
 
-        -- ==============================
-        -- SALARY DETAILS
-        -- ==============================
         s.salary_id,
         s.wef,
         s.basic_salary,
@@ -334,8 +329,9 @@ export const getUsers = async (req, res) => {
          )
 
        ${searchClause}
-
-       LIMIT ? OFFSET ?`,
+       ORDER BY u.user_id ASC
+       LIMIT ? OFFSET ?
+       `,
       [...searchParams, limit, offset],
     );
 
@@ -396,9 +392,6 @@ export const getUserById = async (req, res) => {
         u.role,
         u.status,
 
-        -- ==============================
-        -- BANK DETAILS
-        -- ==============================
         b.bank_id,
         b.account_no,
         b.bank_name,
@@ -406,9 +399,6 @@ export const getUserById = async (req, res) => {
         b.ifsc_code,
         b.status AS bank_status,
 
-        -- ==============================
-        -- SALARY DETAILS
-        -- ==============================
         s.salary_id,
         s.wef,
         s.basic_salary,
@@ -713,6 +703,280 @@ export const addUser = async (req, res) => {
     });
   } finally {
     connection.release();
+  }
+};
+
+const ALLOWED_ROLES = ["SP", "Admin", "User", "Manager", "Master"];
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+const cleanValue = (value) => {
+  if (value === undefined || value === null) return undefined;
+  const trimmed = String(value).trim();
+  return trimmed === "" ? undefined : trimmed;
+};
+
+export const bulkAddUsers = async (req, res) => {
+  try {
+    const { users } = req.body;
+
+    if (!Array.isArray(users) || users.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No users provided for bulk upload.",
+      });
+    }
+
+    const createdBy = req.user?.user_id || null;
+    const results = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < users.length; i++) {
+      const raw = users[i] || {};
+      const rowNumber = raw.row ?? i + 2;
+
+      const f_name = cleanValue(raw.f_name);
+      const m_name = cleanValue(raw.m_name);
+      const l_name = cleanValue(raw.l_name);
+      const phone = cleanValue(raw.phone);
+      const email = cleanValue(raw.email);
+      const address = cleanValue(raw.address);
+      const town = cleanValue(raw.town);
+      const district = cleanValue(raw.district);
+      const pin_code = cleanValue(raw.pin_code);
+      const distributor = cleanValue(raw.distributor);
+      const asm = cleanValue(raw.asm);
+      const rsm = cleanValue(raw.rsm);
+      const fwd = cleanValue(raw.fwd);
+      const role = cleanValue(raw.role);
+      const accNo = cleanValue(raw.accNo);
+      const bankName = cleanValue(raw.bankName);
+      const branch = cleanValue(raw.branch);
+      const ifsc = cleanValue(raw.ifsc);
+      const wef = cleanValue(raw.wef);
+      const basic_salary = cleanValue(raw.basic_salary);
+      const incentive = cleanValue(raw.incentive);
+      const allowance = cleanValue(raw.allowance);
+      const gratuity = cleanValue(raw.gratuity);
+      const variable = cleanValue(raw.variable);
+
+      const name = `${f_name || ""} ${l_name || ""}`.trim();
+      const connection = await pool.getConnection();
+
+      try {
+        if (!f_name || !l_name || !phone || !email || !fwd) {
+          throw new Error("First name, last name, phone, email and joining date are required.");
+        }
+
+        if (!DATE_RE.test(fwd)) {
+          throw new Error("Joining date must be in YYYY-MM-DD format.");
+        }
+
+        if (role && !ALLOWED_ROLES.includes(role)) {
+          throw new Error(`Role must be one of: ${ALLOWED_ROLES.join(", ")}.`);
+        }
+
+        await connection.beginTransaction();
+
+        const [existingUsers] = await connection.query(
+          `SELECT user_id, email, phone
+           FROM mst_users
+           WHERE email = ? OR phone = ?
+           LIMIT 1`,
+          [email, phone],
+        );
+
+        if (existingUsers.length > 0) {
+          const existingUser = existingUsers[0];
+
+          if (existingUser.email === email) {
+            throw new Error("Email already exists.");
+          }
+
+          if (existingUser.phone === phone) {
+            throw new Error("Phone number already exists.");
+          }
+
+          throw new Error("Email or phone already exists.");
+        }
+
+        const [maxUserRows] = await connection.query(
+          `SELECT COALESCE(MAX(user_id), 0) + 1 AS next_user_id
+           FROM mst_users
+           FOR UPDATE`,
+        );
+
+        const user_id = maxUserRows[0].next_user_id;
+
+        const hashedPassword = await bcrypt.hash("Malpani@1234", 10);
+        const userStatus = "A";
+        const userRole = role || "SP";
+
+        await connection.query(
+          `INSERT INTO mst_users (
+            user_id,
+            username,
+            password,
+            f_name,
+            m_name,
+            l_name,
+            phone,
+            email,
+            address,
+            town,
+            district,
+            pin_code,
+            distributor,
+            asm,
+            rsm,
+            fwd,
+            role,
+            status,
+            c_by,
+            c_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+          [
+            user_id,
+            email,
+            hashedPassword,
+            f_name,
+            m_name || null,
+            l_name,
+            phone,
+            email,
+            address || null,
+            town || null,
+            district || null,
+            pin_code || null,
+            distributor || null,
+            asm || null,
+            rsm || null,
+            fwd,
+            userRole,
+            userStatus,
+            createdBy,
+          ],
+        );
+
+        if (accNo || bankName || branch || ifsc) {
+          if (!accNo || !bankName || !branch || !ifsc) {
+            throw new Error("Account number, bank name, branch and IFSC are required when bank details are provided.");
+          }
+
+          const [maxBankRows] = await connection.query(
+            `SELECT COALESCE(MAX(bank_id), 0) + 1 AS next_bank_id
+             FROM bank_info
+             FOR UPDATE`,
+          );
+
+          const bank_id = maxBankRows[0].next_bank_id;
+
+          await connection.query(
+            `INSERT INTO bank_info (
+              bank_id,
+              user_id,
+              account_no,
+              bank_name,
+              branch,
+              ifsc_code,
+              status,
+              c_by,
+              c_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [bank_id, user_id, accNo, bankName, branch, ifsc, "A", createdBy],
+          );
+        }
+
+        if (wef || basic_salary !== undefined) {
+          if (!wef || basic_salary === undefined) {
+            throw new Error("WEF date and basic salary are required when salary details are provided.");
+          }
+
+          if (!DATE_RE.test(wef)) {
+            throw new Error("WEF date must be in YYYY-MM-DD format.");
+          }
+
+          const [maxSalaryRows] = await connection.query(
+            `SELECT COALESCE(MAX(salary_id), 0) + 1 AS next_salary_id
+             FROM salary_structure
+             FOR UPDATE`,
+          );
+
+          const salary_id = maxSalaryRows[0].next_salary_id;
+
+          await connection.query(
+            `INSERT INTO salary_structure (
+              salary_id,
+              user_id,
+              wef,
+              basic_salary,
+              incentive,
+              allowance,
+              gratuity,
+              variable,
+              status,
+              c_by,
+              c_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [
+              salary_id,
+              user_id,
+              wef,
+              basic_salary,
+              incentive ?? 0,
+              allowance ?? 0,
+              gratuity ?? 0,
+              variable ?? 0,
+              "A",
+              createdBy,
+            ],
+          );
+        }
+
+        await connection.commit();
+
+        successCount++;
+        results.push({
+          row: rowNumber,
+          success: true,
+          message: "User created successfully.",
+          name,
+          email,
+        });
+      } catch (err) {
+        await connection.rollback().catch(() => { });
+
+        errorCount++;
+        results.push({
+          row: rowNumber,
+          success: false,
+          message: err.message || "Failed to create user.",
+          name,
+          email: email || raw.email || "",
+        });
+      } finally {
+        connection.release();
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Bulk upload complete. ${successCount} of ${users.length} user(s) created successfully${errorCount ? `, ${errorCount} failed` : ""}.`,
+      total: users.length,
+      successCount,
+      errorCount,
+      results,
+    });
+  } catch (error) {
+    console.error("Bulk Add Users Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error during bulk upload.",
+    });
   }
 };
 

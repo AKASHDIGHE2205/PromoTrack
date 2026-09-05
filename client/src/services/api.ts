@@ -39,6 +39,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      const { store } = await import("../store/Store");
+      const { logout } = await import("../feature/auth/authSlice");
+      store.dispatch(logout());
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export function getApiError(err: unknown): string {
   if (axios.isAxiosError(err)) {
     const axiosErr =
