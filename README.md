@@ -1,21 +1,36 @@
-# Sales Promoter
+# 🚀 PromoTrack — Sales Promoter
 
-A full-stack app for managing promoters, attendance, item promotions, shops, and reporting. It consists of a React + TypeScript client and an Express + MySQL server.
+A full-stack application for managing **sales promoters, attendance, shops, product promotions, file uploads, location tracking, SMS notifications, and reports**.
 
-## Project Structure
+## ✨ Features
 
+* 🔐 Authentication & role-based access
+* 👨‍💼 Promoter management
+* 🏪 Shop management
+* 🕐 Attendance & check-in/check-out
+* 📦 Product promotion management
+* 📁 File/image uploads
+* 🗺️ Google Maps & location tracking
+* 📱 SMS notifications
+* 📊 Dashboard & reports
+
+## 🛠️ Tech Stack
+
+**Frontend:** React, TypeScript, Vite, Redux Toolkit, React Router, Tailwind CSS, Axios
+
+**Backend:** Node.js, Express.js, MySQL, JWT, bcrypt, Multer
+
+**Integrations:** Google Maps, SMS API
+
+## 📁 Project Structure
+
+```text
+PromoTrack/
+├── client/    # React + TypeScript
+└── server/    # Express + MySQL
 ```
-sales-promoter/
-├── client/   # React + Vite + TypeScript frontend
-└── server/   # Express + MySQL backend
-```
 
-## Prerequisites
-
-- Node.js
-- MySQL
-
-## Getting Started
+## ⚙️ Setup
 
 ### Server
 
@@ -24,15 +39,30 @@ cd server
 npm install
 ```
 
-Create a `.env` file in `server/` (see `server/.env` for required variables, e.g. `PORT`, database credentials, JWT secret).
+Create `.env`:
 
-Set up the database using `server/sql/schema.sql`, then start the server:
+```env
+PORT=2000
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=promotrack
+JWT_SECRET=your_secret
+GOOGLE_MAPS_API_KEY=your_key
+SMS_API_KEY=your_key
+```
+
+Setup the database using:
+
+```text
+server/sql/schema.sql
+```
+
+Start the server:
 
 ```bash
 npm start
 ```
-
-The server runs on `http://localhost:2000` by default (configurable via `PORT`).
 
 ### Client
 
@@ -42,16 +72,20 @@ npm install
 npm run dev
 ```
 
-## Features
+## 🌐 Application
 
-- Authentication & role-based access control
-- Attendance tracking
-- Product promotion management
-- Shop management
-- Dashboard & reporting
+Frontend:
 
-## Tech Stack
+```text
+http://localhost:5173
+```
 
-**Client:** React, TypeScript, Vite, Redux Toolkit, React Router, Tailwind CSS, Axios
+Backend:
 
-**Server:** Express, MySQL, JWT authentication, bcrypt, Multer
+```text
+http://localhost:2000
+```
+
+## 👨‍💻 Author
+
+**Akash Dighe**
